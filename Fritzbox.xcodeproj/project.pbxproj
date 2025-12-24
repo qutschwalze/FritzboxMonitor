@@ -8,13 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		8A5A00B52EFBE09200E2B1E3 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 8A5A00B42EFBE08800E2B1E3 /* README.md */; };
-		8A5A00B72EFBE0FB00E2B1E3 /* App Screenshot.png in Resources */ = {isa = PBXBuildFile; fileRef = 8A5A00B62EFBE0FB00E2B1E3 /* App Screenshot.png */; };
+		8A5A00B92EFBE3F900E2B1E3 /* app_screenshot.png in Resources */ = {isa = PBXBuildFile; fileRef = 8A5A00B82EFBE3F900E2B1E3 /* app_screenshot.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		8A5A00A42EFBD25B00E2B1E3 /* Fritzbox.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Fritzbox.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8A5A00B42EFBE08800E2B1E3 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		8A5A00B62EFBE0FB00E2B1E3 /* App Screenshot.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "App Screenshot.png"; sourceTree = "<group>"; };
+		8A5A00B82EFBE3F900E2B1E3 /* app_screenshot.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = app_screenshot.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -55,7 +55,7 @@
 				8A5A00A62EFBD25B00E2B1E3 /* Fritzbox */,
 				8A5A00A52EFBD25B00E2B1E3 /* Products */,
 				8A5A00B42EFBE08800E2B1E3 /* README.md */,
-				8A5A00B62EFBE0FB00E2B1E3 /* App Screenshot.png */,
+				8A5A00B82EFBE3F900E2B1E3 /* app_screenshot.png */,
 			);
 			sourceTree = "<group>";
 		};
@@ -132,7 +132,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8A5A00B52EFBE09200E2B1E3 /* README.md in Resources */,
-				8A5A00B72EFBE0FB00E2B1E3 /* App Screenshot.png in Resources */,
+				8A5A00B92EFBE3F900E2B1E3 /* app_screenshot.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
