@@ -2,52 +2,62 @@ import SwiftUI
 import AppKit
 import Combine
 import Network
+import ServiceManagement // Wichtig für Autostart
 
 // --- TRAFFIC MANAGER (Singleton) ---
 class TrafficManager: ObservableObject {
     static let shared = TrafficManager()
     
-    // IP-Adresse (wird gespeichert, damit man sie nicht jedes Mal eingeben muss)
+    // IP-Adresse
     @Published var fritzIP: String {
         didSet { UserDefaults.standard.set(fritzIP, forKey: "FRITZ_IP") }
     }
     
-    // Status für die UI
-    @Published var connectionStatus: String = "Suche..."
+    // Autostart Status
+    @Published var launchAtLogin: Bool {
+        didSet {
+            // Registriert oder deregistriert die App als Login Item
+            if launchAtLogin {
+                try? SMAppService.mainApp.register()
+            } else {
+                try? SMAppService.mainApp.unregister()
+            }
+        }
+    }
     
-    // Live-Daten
+    // Status & Daten
+    @Published var connectionStatus: String = "Suche..."
     @Published var downText: String = "..."
     @Published var upText: String = "..."
     
-    // Historie für den Graphen
+    // Historie
     @Published var historyDown: [Double] = Array(repeating: 0.0, count: 40)
     @Published var historyUp: [Double] = Array(repeating: 0.0, count: 40)
     
     private var timer: Timer?
     let PORT = "49000"
-    
-    // Skalierung für Graphen (in MBit/s)
     let MAX_DOWN = 100.0
     let MAX_UP = 40.0
     
     init() {
-        // Lade gespeicherte IP oder nutze Standard
+        // Lade IP
         self.fritzIP = UserDefaults.standard.string(forKey: "FRITZ_IP") ?? "192.168.178.1"
-        // Startet sofort den Versuch
+        
+        // Prüfe Autostart-Status beim Start
+        self.launchAtLogin = SMAppService.mainApp.status == .enabled
+        
+        // Startet Suche
         discoverFritzBox()
     }
     
     func discoverFritzBox() {
         connectionStatus = "Prüfe \(fritzIP)..."
-        
-        // 1. Prüfe gespeicherte IP
         checkConnection(ip: fritzIP) { success in
             DispatchQueue.main.async {
                 if success {
                     self.connectionStatus = "Verbinde..."
                     self.startMonitoring()
                 } else {
-                    // 2. Fallback: Prüfe "fritz.box"
                     self.checkConnection(ip: "fritz.box") { success2 in
                         DispatchQueue.main.async {
                             if success2 {
@@ -56,7 +66,6 @@ class TrafficManager: ObservableObject {
                                 self.startMonitoring()
                             } else {
                                 self.connectionStatus = "Nicht gefunden"
-                                // Timer läuft nicht an -> User muss IP eingeben
                             }
                         }
                     }
@@ -74,7 +83,6 @@ class TrafficManager: ObservableObject {
         let host = NWEndpoint.Host(ip)
         let port = NWEndpoint.Port(rawValue: 49000)!
         let connection = NWConnection(host: host, port: port, using: .tcp)
-        
         connection.stateUpdateHandler = { state in
             switch state {
             case .ready:
@@ -86,7 +94,6 @@ class TrafficManager: ObservableObject {
             }
         }
         connection.start(queue: .global())
-        // Kurzer Timeout für den Check
         DispatchQueue.global().asyncAfter(deadline: .now() + 1.0) {
             if connection.state != .ready { connection.cancel() }
         }
@@ -126,11 +133,9 @@ class TrafficManager: ObservableObject {
                 let upMbit = (upBytes * 8) / 1_000_000
                 
                 DispatchQueue.main.async {
-                    // Update Status auf "Verbunden", sobald Daten fließen
                     if !self.connectionStatus.contains("Verbunden") {
                         self.connectionStatus = "Verbunden"
                     }
-                    
                     self.downText = self.formatBytes(bytes: downBytes)
                     self.upText = self.formatBytes(bytes: upBytes)
                     
@@ -165,7 +170,7 @@ class TrafficManager: ObservableObject {
     }
 }
 
-// --- APP DELEGATE (Verwaltet die Menüleiste) ---
+// --- APP DELEGATE ---
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem?
     var popover = NSPopover()
@@ -177,7 +182,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let hostingView = NSHostingView(rootView: MenuBarView())
             hostingView.frame = NSRect(x: 0, y: 0, width: 100, height: 22)
             button.addSubview(hostingView)
-            
             button.action = #selector(togglePopover)
             button.target = self
         }
@@ -206,8 +210,7 @@ struct SplitGraph: View {
             let h = g.size.height
             let midY = h / 2
             
-            // UPLOAD (Rot, nach oben)
-            Path { p in
+            Path { p in // UP (Rot)
                 let step = w / CGFloat(upData.count - 1)
                 p.move(to: CGPoint(x: 0, y: midY))
                 for (i, v) in upData.enumerated() {
@@ -218,8 +221,7 @@ struct SplitGraph: View {
                 p.closeSubpath()
             }.fill(Color(red: 1.0, green: 0.4, blue: 0.4).opacity(0.8))
             
-            // DOWNLOAD (Blau, nach unten)
-            Path { p in
+            Path { p in // DOWN (Blau)
                 let step = w / CGFloat(downData.count - 1)
                 p.move(to: CGPoint(x: 0, y: midY))
                 for (i, v) in downData.enumerated() {
@@ -230,7 +232,6 @@ struct SplitGraph: View {
                 p.closeSubpath()
             }.fill(Color(red: 0.4, green: 0.8, blue: 1.0).opacity(0.8))
             
-            // Mittellinie
             Path { p in
                 p.move(to: CGPoint(x: 0, y: midY))
                 p.addLine(to: CGPoint(x: w, y: midY))
@@ -239,15 +240,13 @@ struct SplitGraph: View {
     }
 }
 
-// --- MENÜLEISTEN ANSICHT ---
+// --- MENÜLEISTE ---
 struct MenuBarView: View {
     @ObservedObject var manager = TrafficManager.shared
-    
     var body: some View {
         HStack(spacing: 6) {
             SplitGraph(downData: manager.historyDown, upData: manager.historyUp)
                 .frame(width: 50, height: 18)
-            
             VStack(alignment: .trailing, spacing: -1) {
                 Text(manager.upText).foregroundColor(Color.white.opacity(0.8))
                 Text(manager.downText).fontWeight(.bold).foregroundColor(.white)
@@ -261,7 +260,7 @@ struct MenuBarView: View {
     }
 }
 
-// --- POPOVER (Einstellungen) ---
+// --- POPOVER MENÜ ---
 struct ContentView: View {
     @ObservedObject var manager = TrafficManager.shared
     
@@ -270,7 +269,7 @@ struct ContentView: View {
             Text("FRITZ!Box Monitor").font(.headline)
             Divider()
             
-            // Status Anzeige (Grün/Rot)
+            // Status
             HStack {
                 Text("Status:")
                 Spacer()
@@ -284,42 +283,40 @@ struct ContentView: View {
             }
             .font(.subheadline)
             
-            // IP Eingabefeld
+            // IP Eingabe (nur wenn nötig)
             VStack(alignment: .leading, spacing: 4) {
                 Text("IP-Adresse:").font(.caption).foregroundColor(.secondary)
                 HStack {
                     TextField("IP", text: $manager.fritzIP)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
-                    
-                    Button("Verbinden") {
-                        manager.retryConnection()
-                    }
+                    Button("Verbinden") { manager.retryConnection() }
                 }
             }
             
-            Button("FRITZ!Box öffnen") {
-                manager.openFritzBoxInterface()
-            }
-            .buttonStyle(.borderedProminent)
-            .frame(maxWidth: .infinity)
+            Button("FRITZ!Box öffnen") { manager.openFritzBoxInterface() }
+                .buttonStyle(.borderedProminent)
+                .frame(maxWidth: .infinity)
             
             Divider()
             
-            Button("Beenden") {
-                NSApplication.shared.terminate(nil)
-            }
-            .frame(maxWidth: .infinity, alignment: .center)
+            // Autostart Option
+            Toggle("Start bei Login", isOn: $manager.launchAtLogin)
+                .font(.caption)
+            
+            Divider()
+            
+            Button("Beenden") { NSApplication.shared.terminate(nil) }
+                .frame(maxWidth: .infinity, alignment: .center)
         }
         .padding()
         .frame(width: 220)
     }
 }
 
-// --- ENTRY POINT ---
 @main
 struct FBTrafficMacApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     var body: some Scene {
-        Settings { EmptyView() } // Versteckt das Hauptfenster
+        Settings { EmptyView() }
     }
 }
