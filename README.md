@@ -12,6 +12,7 @@ A lightweight, native macOS menu bar application that monitors your FRITZ!Box in
 *   **Zero Distraction:** Runs as a menu bar agent (no Dock icon, no main window).
 *   **Instant Access:** Quick link to open the FRITZ!Box web interface.
 *   **Smart Fallback:** Includes a manual IP input field if auto-discovery fails.
+*   **Auto-Start:** Option to automatically launch the app at login via a simple toggle in the menu (requires macOS 13+).
 
 ## 🚀 Installation
 
@@ -32,6 +33,15 @@ A lightweight, native macOS menu bar application that monitors your FRITZ!Box in
 *   **SwiftUI** (User Interface)
 *   **Combine** (Data Binding)
 *   **Network.framework** (Connection Checks)
+
+## 🚀 Auto-Start on Login
+
+You can set the app to start automatically whenever you log in to your Mac:
+1. Click on the menu bar graph to open the settings popover.
+2. Toggle the checkbox **"Start bei Login"** (Start at Login).
+3. If prompted by macOS, allow the app to run in the background ("Login Item").
+
+*Note: This feature uses the modern `SMAppService` API and requires macOS 13 (Ventura) or newer.*
 
 ## 🔧 How it works
 
