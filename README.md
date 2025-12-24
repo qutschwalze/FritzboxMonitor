@@ -1,5 +1,10 @@
 # 📉 FRITZ!Box Traffic Monitor for macOS
 
+![Swift](https://img.shields.io/badge/Swift-5.0-orange?style=flat-square&logo=swift)
+![Platform](https://img.shields.io/badge/Platform-macOS%2011.0+-lightgrey?style=flat-square&logo=apple)
+![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
+![Architecture](https://img.shields.io/badge/Arch-Universal-green?style=flat-square)
+
 A lightweight, native macOS menu bar application that monitors your FRITZ!Box internet traffic in real-time. Built purely with **SwiftUI** and **Network.framework**, it offers a seamless integration into the macOS menu bar without cluttering your dock.
 
 ![FritzBox Monitor Screenshot](app_screenshot.png)
